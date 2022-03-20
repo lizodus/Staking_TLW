@@ -2,16 +2,16 @@ DApp = {
     web3Provider: null,
     factoryContract: null,
     walletContract: null,
-    toptalTokenContract: null,
+    liztokenContract: null,
     currentAccount: null,
     table: null,
     wallets: {},
 
     // set to true to use with local blockchain
     development: false,
-    //Rinkeby:
-    factoryAddress: "0xe47684d658872fbde11c82036099a12c066c4fa3",
-    tokenAddress: "0x86b32525e687500ed4a665d1b16fef526cdd6f10",
+    //ropsten:
+    factoryAddress: "0x0d1efE69C68BAFdFbB295B36512D72a1F5590837",
+    tokenAddress: "0xCe7F87A3ED6eA0099309E907cD8b4f6e01219e1C",
 
     init: function() {
         console.log("[x] Initializing DApp.");
@@ -42,11 +42,11 @@ DApp = {
             return DApp.factoryContract.at(DApp.factoryAddress);
     },
 
-    getToptalTokenContract: function(){
+    getliztokenContract: function(){
         if(DApp.development)
-            return DApp.toptalTokenContract.deployed();
+            return DApp.liztokenContract.deployed();
         else
-            return DApp.toptalTokenContract.at(DApp.tokenAddress);
+            return DApp.liztokenContract.at(DApp.tokenAddress);
     },
 
     /**
@@ -58,11 +58,11 @@ DApp = {
             DApp.factoryContract.setProvider(DApp.web3Provider);
             console.log("[x] TimeLockedWalletFactory contract initialized.");
 
-            //hardcoding ToptalToken for simplicity
-            $.getJSON('contracts/ToptalToken.json', function(toptalTokenContract){
-                DApp.toptalTokenContract = TruffleContract(toptalTokenContract);
-                DApp.toptalTokenContract.setProvider(DApp.web3Provider);
-                console.log("[x] ToptalToken contract initialized.");
+            //hardcoding liztoken for simplicity
+            $.getJSON('contracts/liztoken.json', function(liztokenContract){
+                DApp.liztokenContract = TruffleContract(liztokenContract);
+                DApp.liztokenContract.setProvider(DApp.web3Provider);
+                console.log("[x] liztoken contract initialized.");
 
                 $.getJSON('contracts/TimeLockedWallet.json', function(walletContract){
                     DApp.walletContract = TruffleContract(walletContract)
@@ -129,13 +129,13 @@ DApp = {
             });
 
         // Load Toptal wallets.
-        DApp.getToptalTokenContract()
+        DApp.getliztokenContract()
             .then(function(tokenInstance){
                 return tokenInstance.balanceOf(walletAddress);
             })
             .then(function(info){
                 var amount = info.toNumber();
-                DApp.addFundsToWallet(walletAddress, 'toptaltoken', amount);
+                DApp.addFundsToWallet(walletAddress, 'liztoken', amount);
             });
     },
 
@@ -197,8 +197,8 @@ DApp = {
                     var amount = withdrawEvent["amount"].toNumber();
                     DApp.addFundsToWallet(walletAddress, 'wei', (-1)*amount);
                 });
-        } else if (currency == "toptaltoken") {
-        DApp.getToptalTokenContract()
+        } else if (currency == "liztoken") {
+        DApp.getliztokenContract()
             .then(function(tokenInstance) {
                 console.log("ADDRESS", tokenInstance.address);
                 DApp.walletContract.at(walletAddress)
@@ -212,7 +212,7 @@ DApp = {
                         var withdrawEvent = tx.logs[0].args;
                         console.log("****", withdrawEvent["amount"].toNumber());
                         var amount = withdrawEvent["amount"].toNumber();
-                        DApp.addFundsToWallet(walletAddress, 'toptaltoken', (-1)*amount);
+                        DApp.addFundsToWallet(walletAddress, 'liztoken', (-1)*amount);
                     })
                     ;
             })
@@ -234,9 +234,9 @@ DApp = {
 
                     DApp.addFundsToWallet(walletAddress, 'wei', amount);
                 });
-        } else if(currency === "toptaltoken") {
-            console.log("Topup Toptal Token");
-            DApp.getToptalTokenContract()
+        } else if(currency === "liztoken") {
+            console.log("LizToken Token");
+            DApp.getliztokenContract()
                 .then(function(tokenInstance){
                     return tokenInstance.transfer(walletAddress, amount, {from: DApp.currentAccount});
                 })
@@ -246,7 +246,7 @@ DApp = {
                     var from = transferEvent.from;
                     var amount = transferEvent.value.toNumber()
 
-                    DApp.addFundsToWallet(walletAddress, 'toptaltoken', amount);
+                    DApp.addFundsToWallet(walletAddress, 'liztoken', amount);
                 });
         } else {
             throw new Error("Unknown currency!");
@@ -357,9 +357,9 @@ DApp = {
             var weiValue = DApp.getKnownWalletBallance(wallet, 'wei');
             var ethValue = web3.fromWei(weiValue, 'ether');
             form.find("#claimableAmount").val(ethValue);
-        } else if(currency == "toptaltoken") {
-            var toptalValue = DApp.getKnownWalletBallance(wallet, 'toptaltoken')
-            form.find("#claimableAmount").val(toptalValue);
+        } else if(currency == "liztoken") {
+            var liztoken = DApp.getKnownWalletBallance(wallet, 'liztoken')
+            form.find("#claimableAmount").val(liztoken);
         } else {
             console.log("Unknown currency set: " + currency);
         }
@@ -499,7 +499,7 @@ DApp = {
 
     hashFormatter: function(hash, row, index){
         shortHash = hash.slice(0, 10);
-        return `<a href="https://rinkeby.etherscan.io/address/${hash}">${shortHash}...</a>`;
+        return `<a href="https://ropsten.etherscan.io/address/${hash}">${shortHash}...</a>`;
     },
 
     dateFormatter: function(timestamp, row, index){
@@ -509,16 +509,16 @@ DApp = {
     valueFormatter: function(cell, row){
         var weiValue = DApp.getKnownWalletBallance(row['wallet'], 'wei');
         var ethValue = web3.fromWei(weiValue, 'ether');
-        var toptalValue = DApp.getKnownWalletBallance(row['wallet'], 'toptaltoken')
+        var liztoken = DApp.getKnownWalletBallance(row['wallet'], 'liztoken')
 
-        console.log("xxxx", row['wallet'], ethValue, toptalValue);
+        console.log("xxxx", row['wallet'], ethValue, liztoken);
 
-        if(ethValue == 0 && toptalValue == 0){
+        if(ethValue == 0 && liztoken == 0){
             return 'Wallet empty';
         } 
         var html = '';
         if(ethValue > 0) { html += `${ethValue} Ether</br>`}
-        if(toptalValue > 0) { html += `${toptalValue} ToptalToken`}
+        if(liztoken > 0) { html += `${liztoken} liztoken`}
 
         return html;
     },
